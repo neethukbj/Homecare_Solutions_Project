@@ -23,21 +23,21 @@ urlpatterns = [
     path('providersignup/', views.providersignup, name="providersignup"),
     path('loginprovider/',views.loginprovider,name="loginprovider"),
     path('logoutprovider/',views.logoutprovider,name="logoutprovider"),
-    # path('providerdashboard/<int:user_profile_id>/', views.providerdashboard, name='providerdashboard'),
-    # path('providerdashboard/',views.providerdashboard,name="providerdashboard"),
-    # path('providerprofile/',views.providerprofile,name="providerprofile"),
+    #path('providerdashboard/<int:user_profile_id>/', views.providerdashboard, name='providerdashboard'),
+    path('providerdashboard/',views.providerdashboard,name="providerdashboard"),
+    path('providerprofile/',views.providerprofile,name="providerprofile"),
 
 
     # ####Client views
-    # path('signupclient/',views.signupclient,name="signupclient"),
-    # path('clientsignup/',views.clientsignup,name="clientsignup"),
-    # path('logoutclient/',views.logoutclient,name="logoutclient"),
-    # path('loginclient/',views.loginclient,name="loginclient"),
+    path('signupclient/',views.signupclient,name="signupclient"),
+    path('clientsignup/',views.clientsignup,name="clientsignup"),
+    path('logoutclient/',views.logoutclient,name="logoutclient"),
+    path('loginclient/',views.loginclient,name="loginclient"),
 
 
     # #Provider listing and Payments
 
-    # path('allproviders/',views.allproviders,name="allproviders"),
+    path('allproviders/',views.allproviders,name="allproviders"),
     # path('payment/<int:booking_id>/', views.payment_view, name='payment_view'),
     # path('create-razorpay-order/<int:booking_id>/', views.create_razorpay_order, name='create_razorpay_order'),
     # #path('create_razorpay_order/<int:booking_id>/', views.payment_view, name='create_razorpay_order'),

@@ -307,50 +307,50 @@ def logoutprovider(request):
 # #################
 
 
-# def providerprofile(request):
-#     user_profile_id= request.session.get('user_profile_id')
-#     provider=Provider.objects.get(user_profile_id=user_profile_id)
-#     return render(request,"provider/providerprofile.html", {'provider': provider})
+def providerprofile(request):
+    user_profile_id= request.session.get('user_profile_id')
+    provider=Provider.objects.get(user_profile_id=user_profile_id)
+    return render(request,"provider/dashboard/providerprofile.html", {'provider': provider})
 
 
 # @login_required
 def providerdashboard(request):
-    return (request,'core/index.html')
-#     user_profile_id = request.session.get('user_profile_id')
     
-#     if not user_profile_id:
-#         # Handle case where user_profile_id is missing
-#         return redirect('loginprovider')  # or another appropriate redirect
+    user_profile_id = request.session.get('user_profile_id')
     
-#     try:
-#         provider = Provider.objects.get(user_profile_id=user_profile_id)
-#     except Provider.DoesNotExist:
-#         # Handle the case where the Provider does not exist
-#         return redirect('loginprovider')  # or another appropriate redirect
+    if not user_profile_id:
+        # Handle case where user_profile_id is missing
+        return redirect('loginprovider')  # or another appropriate redirect
+    
+    try:
+        provider = Provider.objects.get(user_profile_id=user_profile_id)
+    except Provider.DoesNotExist:
+        # Handle the case where the Provider does not exist
+        return redirect('loginprovider')  # or another appropriate redirect
 
-#     # Handle booking actions
-#     if request.method == 'POST':
-#         booking_id = request.POST.get('booking_id')
-#         action = request.POST.get('action')
-#         booking = get_object_or_404(BookingRequest, id=booking_id)
+    # Handle booking actions
+    # if request.method == 'POST':
+    #     booking_id = request.POST.get('booking_id')
+    #     action = request.POST.get('action')
+    #     booking = get_object_or_404(Booking, id=booking_id)
 
-#         if action == 'accept':
-#             booking.status = 'Accepted'
-#         elif action == 'reject':
-#             booking.status = 'Rejected'
-#         booking.save()
-#         return redirect('provider_dashboard')
+    #     if action == 'accept':
+    #         booking.status = 'Accepted'
+    #     elif action == 'reject':
+    #         booking.status = 'Rejected'
+    #     booking.save()
+    #     return redirect('provider_dashboard')
 
-#     # Fetch bookings for the provider
-#     bookings = BookingRequest.objects.filter(provider=provider)
-#     messages = Message.objects.filter(client=provider.user_profile.user).order_by('-created_at')
-#     #ongoing_bookings = BookingRequest.objects.filter(provider=provider, status='Paid', is_completed=False)
-#     return render(request, 'provider/index.html', {
-#         'provider': provider,
-#         'bookings': bookings,
-#         'messages':messages,
+    # # Fetch bookings for the provider
+    # bookings = Booking.objects.filter(provider=provider)
+    # messages = Message.objects.filter(client=provider.user_profile.user).order_by('-created_at')
+    #ongoing_bookings = Booking.objects.filter(provider=provider, status='Paid', is_completed=False)
+    return render(request, 'provider/dashboard/index.html', {
+        'provider': provider,
+        #'bookings': bookings,
+        #'messages':messages,
         
-#     })
+    })
 
 
 # #################
@@ -358,194 +358,216 @@ def providerdashboard(request):
 # #################
 
 
-# def signupclient(request):
-#     if request.method == 'POST':
-#         form_client = ClientSignupForm(request.POST)
-#         if form_client.is_valid():
-#             user = form_client.save(commit=False)
-#             user.set_password(form_client.cleaned_data['password'])
-#             user.save()
+def signupclient(request):
+    if request.method == 'POST':
+        form_client = ClientSignupForm(request.POST)
+        if form_client.is_valid():
+            user = form_client.save(commit=False)
+            user.set_password(form_client.cleaned_data['password'])
+            user.save()
             
-#             # Create a UserProfile for this user
-#             user_profile = UserProfile.objects.create(user=user, is_client=True)
+            # Create a UserProfile for this user
+            user_profile = UserProfile.objects.create(user=user, is_client=True)
 
-#             # Create the Provider profile using the UserProfile
-#             Client.objects.create(user_profile=user_profile)
-
-#             messages.success(request, 'Your account has been created successfully!')
-#             return redirect('clientsignup')
-#         else:
-#             print("no", form_client.errors)
-#             messages.error(request, 'There was an error in the form. Please check the fields and try again.')
-#     else:
-#         form_client = ClientSignupForm()
+            # Create the Provider profile using the UserProfile
+            Client.objects.create(user_profile=user_profile)
+            refresh = RefreshToken.for_user(user)
+            login(request,user)
+            messages.success(request, 'Your account has been created successfully!')
+            # Send JWT tokens in the response (optional based on your API requirement)
+            response_data = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+            return redirect('clientsignup')
+        else:
+            print("no", form_client.errors)
+            messages.error(request, 'There was an error in the form. Please check the fields and try again.')
+    else:
+        form_client = ClientSignupForm()
         
-#     context={'form_client': form_client}
-#     return render(request,"client/auth-sign-up.html",context)
+    context={'form_client': form_client}
+    return render(request,"client/auth-sign-up.html",context)
 
-# def clientsignup(request):
-#     step = int(request.GET.get('step', 1))
+def clientsignup(request):
+    step = int(request.GET.get('step', 1))
 
-#     if step == 1:
-#         if request.method == 'POST':
-#             form_client_personal = ClientPersonalForm(request.POST)
-#             if form_client_personal.is_valid():
-#                 personal_data = form_client_personal.cleaned_data
-#                 username = personal_data.get('name')
+    if step == 1:
+        if request.method == 'POST':
+            form_client_personal = ClientPersonalForm(request.POST)
+            if form_client_personal.is_valid():
+                personal_data = form_client_personal.cleaned_data
+                username = personal_data.get('name')
 
-#                 # Ensure a User is created or fetched
-#                 user = User.objects.filter(username=username).first()
-#                 if not user:
-#                     user = User.objects.create_user(
-#                         username=username,
-#                         email=personal_data.get('email'),
-#                         password=personal_data.get('password')  # Ensure password is hashed
-#                     )
+                # Ensure a User is created or fetched
+                user = User.objects.filter(username=username).first()
+                if not user:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=personal_data.get('email'),
+                        password=personal_data.get('password')  # Ensure password is hashed
+                    )
 
-#                 # Create or get the UserProfile for this user
-#                 user_profile, created = UserProfile.objects.get_or_create(user=user)
+                # Create or get the UserProfile for this user
+                user_profile, created = UserProfile.objects.get_or_create(user=user)
 
-#                 # Store user_profile_id in session as an integer
-#                 request.session['user_profile_id'] = user_profile.id
-#                 request.session['form_personal_data'] = personal_data
-#                 return redirect(f'{reverse("clientsignup")}?step=2')
-#             else:
-#                 print("error", form_client_personal.errors)
-#         else:
-#             form_client_personal = ClientPersonalForm()
-#         return render(request, 'client/client_signup.html', {
-#             'form_client_personal': form_client_personal,
-#             'step': step,
-#         })
+                # Store user_profile_id in session as an integer
+                request.session['user_profile_id'] = user_profile.id
+                request.session['form_personal_data'] = personal_data
+                return redirect(f'{reverse("clientsignup")}?step=2')
+            else:
+                print("error", form_client_personal.errors)
+        else:
+            form_client_personal = ClientPersonalForm()
+        return render(request, 'client/client_signup.html', {
+            'form_client_personal': form_client_personal,
+            'step': step,
+        })
 
-#     elif step == 2:
-#         if request.method == 'POST':
-#             form_client_services = ClientServicesForm(request.POST, request.FILES)
-#             if form_client_services.is_valid():
-#                 form_client_services_data = form_client_services.cleaned_data.copy()
-#                 service_needed = form_client_services_data.pop('service_needed', None)
+    elif step == 2:
+        if request.method == 'POST':
+            form_client_services = ClientServicesForm(request.POST, request.FILES)
+            if form_client_services.is_valid():
+                form_client_services_data = form_client_services.cleaned_data.copy()
+                service_needed = form_client_services_data.pop('service_needed', None)
 
-#                 # Convert Decimal fields to float for JSON serialization
-#                 for key, value in form_client_services_data.items():
-#                     if isinstance(value, Decimal):
-#                         form_client_services_data[key] = float(value)
+                # Convert Decimal fields to float for JSON serialization
+                for key, value in form_client_services_data.items():
+                    if isinstance(value, Decimal):
+                        form_client_services_data[key] = float(value)
 
-#                 request.session['form_client_services_data'] = form_client_services_data
-#                 if service_needed:
-#                     request.session['service_needed'] = [service.id for service in service_needed]
+                request.session['form_client_services_data'] = form_client_services_data
+                if service_needed:
+                    request.session['service_needed'] = [service.id for service in service_needed]
 
-#                 return redirect(f'{reverse("clientsignup")}?step=3')
-#             else:
-#                 print("errors", form_client_services.errors)
-#         else:
-#             form_client_services = ClientServicesForm()
-#         return render(request, 'client/client_signup.html', {
-#             'form_client_services': form_client_services,
-#             'step': step,
-#         })
+                return redirect(f'{reverse("clientsignup")}?step=3')
+            else:
+                print("errors", form_client_services.errors)
+        else:
+            form_client_services = ClientServicesForm()
+        return render(request, 'client/client_signup.html', {
+            'form_client_services': form_client_services,
+            'step': step,
+        })
 
-#     elif step == 3:
-#         if request.method == 'POST':
-#             form_client_image = ClientImageForm(request.POST, request.FILES)
-#             if form_client_image.is_valid():
-#                 form_client_data = request.session.get('form_personal_data', {})
-#                 print(form_client_data)
-#                 form_client_services_data = request.session.get('form_client_services_data', {})
-#                 form_client_image_data = form_client_image.cleaned_data
+    elif step == 3:
+        if request.method == 'POST':
+            form_client_image = ClientImageForm(request.POST, request.FILES)
+            if form_client_image.is_valid():
+                form_client_data = request.session.get('form_personal_data', {})
+                print(form_client_data)
+                form_client_services_data = request.session.get('form_client_services_data', {})
+                form_client_image_data = form_client_image.cleaned_data
 
-#                 user_profile_id = request.session.get('user_profile_id')
-#                 if not user_profile_id:
-#                     print("Error: user_profile_id is missing.")
-#                     return redirect(f'{reverse("clientsignup")}?step=1')
+                user_profile_id = request.session.get('user_profile_id')
+                if not user_profile_id:
+                    print("Error: user_profile_id is missing.")
+                    return redirect(f'{reverse("clientsignup")}?step=1')
 
-#                 try:
-#                     user_profile = UserProfile.objects.get(id=user_profile_id)
-#                 except UserProfile.DoesNotExist:
-#                     print("user_profile does not exist")
-#                     return redirect(f'{reverse("clientsignup")}?step=1')
+                try:
+                    user_profile = UserProfile.objects.get(id=user_profile_id)
+                except UserProfile.DoesNotExist:
+                    print("user_profile does not exist")
+                    return redirect(f'{reverse("clientsignup")}?step=1')
 
-#                 # Create or update the Provider instance
-#                 client, created = Client.objects.get_or_create(user_profile=user_profile)
+                # Create or update the Provider instance
+                client, created = Client.objects.get_or_create(user_profile=user_profile)
 
-#                 # Update or set fields
-#                 for field, value in {**form_client_data, **form_client_services_data, **form_client_image_data}.items():
-#                     setattr(client, field, value)
-#                 if 'about_work' in form_client_data:
-#                     client.about_work = form_client_image_data['about_work']
-#                 client.profile_picture = form_client_image_data.get('profile_picture')
-#                 client.save()
+                # Update or set fields
+                for field, value in {**form_client_data, **form_client_services_data, **form_client_image_data}.items():
+                    setattr(client, field, value)
+                if 'about_work' in form_client_data:
+                    client.about_work = form_client_image_data['about_work']
+                client.profile_picture = form_client_image_data.get('profile_picture')
+                client.save()
 
-#                 # Set service types
-#                 service_needed = request.session.get('service_needed', [])
-#                 if service_needed:
-#                     client.service_needed.set(service_needed)
+                # Set service types
+                service_needed = request.session.get('service_needed', [])
+                if service_needed:
+                    client.service_needed.set(service_needed)
 
-#                 # Clear session data after saving
-#                 #request.session.flush()
+                # Clear session data after saving
+                #request.session.flush()
 
-#                 return redirect(f'{reverse("clientsignup")}?step=4')
-#             else:
-#                 print("error", form_client_image.errors)
-#         else:
-#             form_client_image = ClientImageForm()
+                return redirect(f'{reverse("clientsignup")}?step=4')
+            else:
+                print("error", form_client_image.errors)
+        else:
+            form_client_image = ClientImageForm()
         
-#         return render(request, 'client/client_signup.html', {
-#             'form_client_image': form_client_image,
-#             'step': step,
-#         })
+        return render(request, 'client/client_signup.html', {
+            'form_client_image': form_client_image,
+            'step': step,
+        })
 
-#     elif step == 4:
-#         user_profile_id = request.session.get('user_profile_id')
-#         if not user_profile_id:
-#             # Handle the case where user_profile_id is not found in the session
-#             print("Error: user_profile_id is missing.")
-#             return redirect('clientsignup')
-#         return render(request, 'client/client_signup.html', {
-#             'step': step,
-#             'user_profile_id': user_profile_id
-#         })
+    elif step == 4:
+        user_profile_id = request.session.get('user_profile_id')
+        if not user_profile_id:
+            # Handle the case where user_profile_id is not found in the session
+            print("Error: user_profile_id is missing.")
+            return redirect('clientsignup')
+        return render(request, 'client/client_signup.html', {
+            'step': step,
+            'user_profile_id': user_profile_id
+        })
 
-#     return redirect('clientsignup')
-
-
-# #################
-# #Client Login/Logout
-# #################
+    return redirect('clientsignup')
 
 
-# # def loginclient(request):
-# #     if request.method == 'POST':
-# #         username = request.POST["username"]
-# #         password = request.POST["password"]
-# #         user = authenticate(request,username=username,password=password)
-# #         if user is not None:
-# #             login(request, user)
-# #             user_profile=UserProfile.objects.get(user=user)
-# #             request.session['user_profile_id'] = user_profile.id
-# #             return redirect('allproviders')        
-# #     return render(request,'client/client-sign-in.html')
-# def loginclient(request):
-#     if request.method == 'POST':
-#         username = request.POST["username"]
-#         password = request.POST["password"]
-#         user = authenticate(request, username=username, password=password)
-#         if user is not None:
-#             user_profile = UserProfile.objects.get(user=user)
-#             if user_profile.is_client:
-#                 login(request, user)
-#                 request.session['user_profile_id'] = user_profile.id
-#                 return redirect('allproviders')  # Redirect to client dashboard
-#             else:
-#                 messages.error(request, 'You are not authorized to log in as a client.')
-#                 return redirect('loginclient')  # Redirect to client login page
-#         else:
-#             messages.error(request, 'Invalid username or password.')
-#     return render(request, 'client/client-sign-in.html')
+#################
+#Client Login/Logout
+#################
+
+
+
+def loginclient(request):
+    if request.method == 'POST':
+        username = request.POST["username"]
+        password = request.POST["password"]
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            user_profile = UserProfile.objects.get(user=user)
+            if user_profile.is_client:
+                login(request, user)
+                # Generate JWT tokens for the user
+                refresh = RefreshToken.for_user(user)
+                request.session['user_profile_id'] = user_profile.id
+                # Optional: Send JWT tokens in response (if used for an API)
+                response_data = {
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                }
+
+                return redirect('allproviders')  # Redirect to client dashboard
+            else:
+                messages.error(request, 'You are not authorized to log in as a client.')
+                return redirect('loginclient')  # Redirect to client login page
+        else:
+            messages.error(request, 'Invalid username or password.')
+    return render(request, 'client/client-sign-in.html')
 
 
 # def logoutclient(request):
 #     logout(request)
 #     return redirect('home')
+def logoutclient(request):
+    # Blacklist JWT tokens if JWT authentication is in use
+    try:
+        refresh_token = request.COOKIES.get('refresh_token')
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+    except Exception as e:
+        print(f"Error blacklisting token: {e}")
+
+    # Clear session data for the user
+    request.session.flush()
+    
+    # Log out the user from Django's authentication system
+    logout(request)
+    
+    # Redirect to home page after logout
+    return redirect('home')
 
 
 # #################
@@ -553,34 +575,36 @@ def providerdashboard(request):
 # #################
 
 # razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))
-# def allproviders(request):
-#     provider = Provider.objects.all()
-#     user_profile = UserProfile.objects.get(user=request.user)
-#     user_profile_id = request.session.get('user_profile_id')    
-#     clientx = Client.objects.get(user_profile_id=user_profile_id)
-#     #messages = Message.objects.filter(client=request.user).order_by('-created_at')
-#     messages = Message.objects.filter(client=request.user)
+def allproviders(request):
+    provider = Provider.objects.all()
+    user_profile = UserProfile.objects.get(user=request.user)
+    user_profile_id = request.session.get('user_profile_id')    
+    clientx = Client.objects.get(user_profile_id=user_profile_id)
+    # #messages = Message.objects.filter(client=request.user).order_by('-created_at')
+    # messages = Message.objects.filter(client=request.user)
     
-#     # for message in messages:
-#     #     if message.status == 'accepted' and not message.payment_url :
-#     #         booking = message.booking  # Get the associated booking
-#     #         amount_in_paise = int(100)  # Convert amount to paisa
+    # # for message in messages:
+    # #     if message.status == 'accepted' and not message.payment_url :
+    # #         booking = message.booking  # Get the associated booking
+    # #         amount_in_paise = int(100)  # Convert amount to paisa
 
-#     #         # Create Razorpay order
-#     #         client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))
-#     #         order_data = {
-#     #             'amount': amount_in_paise,
-#     #             'currency': 'INR',
-#     #             'payment_capture': '1'  # Auto-capture payment
-#     #         }
-#     #         razorpay_order = client.order.create(data=order_data)
+    # #         # Create Razorpay order
+    # #         client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))
+    # #         order_data = {
+    # #             'amount': amount_in_paise,
+    # #             'currency': 'INR',
+    # #             'payment_capture': '1'  # Auto-capture payment
+    # #         }
+    # #         razorpay_order = client.order.create(data=order_data)
 
-#     #         # Attach Razorpay order ID to the message
-#     #         message.razorpay_order_id = razorpay_order['id']
-#     #         message.save()
+    # #         # Attach Razorpay order ID to the message
+    # #         message.razorpay_order_id = razorpay_order['id']
+    # #         message.save()
 
-#     context={'clientx':clientx,'provider':provider,'messages':messages,'razorpay_key': settings.RAZORPAY_API_KEY, 'razorpay_merchant_key': settings.RAZORPAY_API_KEY,"user_profile":user_profile,}
-#     return render(request,"home/allproviders.html",context)
+    context={'clientx':clientx,'provider':provider,
+             #'messages':messages,'razorpay_key': settings.RAZORPAY_API_KEY, 'razorpay_merchant_key': settings.RAZORPAY_API_KEY,"user_profile":user_profile,
+             }
+    return render(request,"client/home/allproviders.html",context)
 
 
 # #################
@@ -591,7 +615,7 @@ def providerdashboard(request):
 
 # @login_required
 # def payment_view(request, booking_id):
-#     booking = get_object_or_404(BookingRequest, id=booking_id)
+#     booking = get_object_or_404(Booking, id=booking_id)
 #     # Calculate total hours from start and end time
 #     # Get the start and end times
 #     start_time = booking.start_time
@@ -618,7 +642,7 @@ def providerdashboard(request):
 #     amount_in_paise = int(total_amount * 100)  # 1 INR = 100 paise
 #     print(f"Total Amount: {total_amount}, Amount in Paise: {amount_in_paise}")
 #     if request.method == 'POST':
-#         #booking = BookingRequest.objects.get(id=booking_id)
+#         #booking = Booking.objects.get(id=booking_id)
 #          # Razorpay requires amount in paise
 #         client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))
 #         order_data = {
@@ -663,7 +687,7 @@ def providerdashboard(request):
 
 # def create_razorpay_order(request, booking_id):
 #     if request.method == 'POST':
-#         booking = BookingRequest.objects.get(id=booking_id)
+#         booking = Booking.objects.get(id=booking_id)
 #         amount_in_paise = 100  # Razorpay requires amount in paise
 
 #         client = razorpay.Client(auth=(settings.RAZORPAY_API_KEY, settings.RAZORPAY_API_SECRET))

@@ -13,7 +13,7 @@ class ProviderAvailability(models.Model):
     class Meta:
         unique_together = ('provider', 'date', 'start_time') 
 
-class BookingRequest(models.Model):
+class Booking(models.Model):
     client_name = models.ForeignKey(User, on_delete=models.CASCADE) 
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='provider_bookings')
@@ -39,7 +39,7 @@ class BookingRequest(models.Model):
 
 class Message(models.Model):
     client = models.ForeignKey(User, on_delete=models.CASCADE)
-    booking = models.ForeignKey(BookingRequest, on_delete=models.CASCADE)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE,default=True)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
