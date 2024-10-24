@@ -91,7 +91,9 @@
     
     {% if message.status == 'accepted' and message.payment_url %}
     <p>Amount in paise: {{ amount_in_paise }}</p>
-    <form action="{% url 'payment_view' message.booking.id %}" method="POST">
+    <form action="#" method="POST">
+
+    {% comment %} <form action="{% url 'payment_view' message.booking.id %}" method="POST"> {% endcomment %}
         {% csrf_token %}
         
         <script

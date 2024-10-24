@@ -43,7 +43,7 @@ def create_booking(request, provider_id):
             )
             booking.save()
             # Redirect to the provider's page or a success page
-            return redirect('notifications')
+            return redirect('client_bookings')
         else:
             print("error",form.errors)
     else:
@@ -98,6 +98,7 @@ def provider_bookings(request):
             booking.save()
 
             message_text = f"Your booking for {booking.service_type.name} on {booking.booking_date} has been accepted!"
+            send_notification(booking.client_name.id, message_text)
             payment_url = f"/payment/{booking.id}"  # Assuming there's a payment view that handles payments
             Message.objects.create(
                 client=booking.client_name,
@@ -135,3 +136,19 @@ def provider_bookings(request):
         'upcoming_bookings':upcoming_bookings,
         'messages':messages,
     })
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+def send_notification(user_id, message):
+    channel_layer = get_channel_layer()
+    group_name = f'user_{user_id}'
+
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            'type': 'send_notification',
+            'message': message
+        }
+    )

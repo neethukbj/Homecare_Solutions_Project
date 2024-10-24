@@ -44,7 +44,24 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     #'debug_toolbar',
+    'channels',
+
 ]
+
+
+# Specify the ASGI application
+ASGI_APPLICATION = 'your_project_name.asgi.application'
+
+# Channels layer configuration (using Redis as the backend)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
