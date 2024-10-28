@@ -50,7 +50,7 @@ INSTALLED_APPS = [
 
 
 # Specify the ASGI application
-ASGI_APPLICATION = 'your_project_name.asgi.application'
+ASGI_APPLICATION = 'carehugs1.asgi.application'
 
 # Channels layer configuration (using Redis as the backend)
 CHANNEL_LAYERS = {

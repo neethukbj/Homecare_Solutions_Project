@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking System</title>
+    <script>
+        var ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        var chatSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/notifications/');
+    
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            // Here, you can update the notification area dynamically with the received message
+            var notificationArea = document.getElementById('notification-area');
+            var newNotification = document.createElement('div');
+            newNotification.innerHTML = data.message;
+            notificationArea.appendChild(newNotification);
+        };
+    
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+    </script>
+    
+    <div id="notification-area">
+        <!-- This area will be populated with real-time notifications -->
+    </div>
+    
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Booking System</h1>
+        <div id="notifications" style="border: 1px solid #ccc; padding: 10px;">
+            <h3>Notifications</h3>
+        </div>
+    </header>
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Booking System</p>
+    </footer>
+</body>
+</html>

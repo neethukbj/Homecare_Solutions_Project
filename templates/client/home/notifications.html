@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Client Notifications</title>
+</head>
+<body>
+    <h2>Notifications</h2>
+    <div id="notifications">
+        {% for message in messages %}
+        <div>{{ message.created_at }} - {{ message.text }}</div>
+    {% endfor %}
+    </div>
+
+    {% comment %} <script>
+        const notificationsDiv = document.getElementById('notifications');
+        const socket = new WebSocket('ws://127.0.0.1:8000/ws/notifications/');
+
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/notifications/');
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const message = data.message;
+            const notificationElement = document.createElement('div');
+            notificationElement.innerText = message;
+            document.getElementById('notifications').appendChild(notificationElement);
+
+        };
+
+        socket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+    
+        socket.onclose = function(event) {
+            console.warn("WebSocket closed:", event);
+        };
+
+    </script> {% endcomment %}
+    <script>
+        const socket = new WebSocket('ws://127.0.0.1:8000/ws/notifications/');
+
+socket.onopen = function(event) {
+    console.log('WebSocket connection opened:', event);
+};
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    console.log('Received message:', data.message);
+    // Handle the received message (e.g., display a notification)
+};
+
+socket.onclose = function(event) {
+    console.log('WebSocket closed:', event);
+    // Optionally attempt to reconnect or notify the user
+};
+
+socket.onerror = function(error) {
+    console.error('WebSocket error:', error);
+};
+
+    </script>
+
+</body>
+</html>

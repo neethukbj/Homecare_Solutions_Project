@@ -11,6 +11,8 @@ from datetime import date
 from .models import *
 from .forms import BookingForm
 import datetime
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 #################
 #Provider Detail
@@ -42,6 +44,15 @@ def create_booking(request, provider_id):
                 about_work=form.cleaned_data['about_work'],
             )
             booking.save()
+            # Send real-time notification via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'notifications',  # group_name
+                {
+                    'type': 'send_message',  # custom message handler in consumer
+                    'message': f"New booking for {provider.name}!"
+                }
+            )
             # Redirect to the provider's page or a success page
             return redirect('client_bookings')
         else:
@@ -50,7 +61,9 @@ def create_booking(request, provider_id):
         form = BookingForm(service_choices=service_choices)
     messages = Message.objects.filter(client=request.user)
     return render(request, 'client/home/create_booking.html', {'clientx':clientx,'form': form, 'provider': provider,'messages':messages,"user_profile":user_profile,'available_times': available_times,})
- 
+def notifications_view(request):
+    messages = Message.objects.filter(client=request.user).order_by('-created_at')
+    return render(request, 'client/home/notifications.html',{'messages': messages})
 # def get_available_times(request, provider_id):
 #     if request.method == 'GET':
 #         selected_date = request.GET.get('date')
@@ -92,13 +105,14 @@ def provider_bookings(request):
         booking_id = request.POST.get('booking_id')
         action = request.POST.get('action')
         booking = get_object_or_404(Booking, id=booking_id)
+        channel_layer = get_channel_layer()
 
         if action == 'accept':
             booking.status = 'Accepted'
             booking.save()
 
             message_text = f"Your booking for {booking.service_type.name} on {booking.booking_date} has been accepted!"
-            send_notification(booking.client_name.id, message_text)
+            #send_notification(booking.client_name.id, message_text)
             payment_url = f"/payment/{booking.id}"  # Assuming there's a payment view that handles payments
             Message.objects.create(
                 client=booking.client_name,
@@ -108,6 +122,16 @@ def provider_bookings(request):
                 status='accepted',
                 payment_url=payment_url
             )
+             # Notify via WebSocket
+            
+            async_to_sync(channel_layer.group_send)(
+                'notifications',
+                {
+                    'type': 'send_message',
+                    'message': message_text
+                }
+            )
+
         elif action == 'reject':
             booking.status = 'Rejected'
             booking.save()
@@ -118,6 +142,15 @@ def provider_bookings(request):
                 provider=provider,
                 text=message_text,
                 status='rejected'
+            )
+            # Notify via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'notifications',
+                {
+                    'type': 'send_message',
+                    'message': message_text
+                }
             )
         return redirect('providerdashboard')
     today= datetime.date.today()
@@ -138,17 +171,28 @@ def provider_bookings(request):
     })
 
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
+# from channels.layers import get_channel_layer
 
-def send_notification(user_id, message):
-    channel_layer = get_channel_layer()
-    group_name = f'user_{user_id}'
+# def send_notification(user_id, message):
+#     channel_layer = get_channel_layer()
+#     group_name = f'user_{user_id}'
 
-    async_to_sync(channel_layer.group_send)(
-        group_name,
-        {
-            'type': 'send_notification',
-            'message': message
-        }
-    )
+#     async_to_sync(channel_layer.group_send)(
+#         group_name,
+#         {
+#             'type': 'send_notification',
+#             'message': message
+#         }
+#     )
+# views.py
+from django.shortcuts import render
+from .models import Message
+
+def notification_view(request):
+    user = request.user  # Assuming the user is logged in
+    messages = Message.objects.filter(client=user).order_by('-created_at')  # Retrieve messages for the logged-in client
+
+    return render(request, 'client/home/notifications.html', {
+        'messages': messages,
+    })

@@ -7,6 +7,7 @@ urlpatterns =[
     # Provider details and booking views
     path('create_booking/<int:provider_id>/', views.create_booking, name='create_booking'),
     path('bookings/', views.client_bookings, name='client_bookings'),
+    path('notifications/', views.notifications_view, name='notifications'),
     path('providerbookings/', views.provider_bookings, name='provider_bookings'),
 
     # path('booking/success/', views.booking_success_view, name='booking_success'),
